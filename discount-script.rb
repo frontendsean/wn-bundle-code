@@ -6,7 +6,7 @@ class Campaign
     qualifiers.compact.each do |qualifier|
       is_multi_select = qualifier.instance_variable_get(:@conditions).is_a?(Array)
       if is_multi_select
-        qualifier.instance_variable_get(:@conditions).each do |nested_q|
+        qualifier.instance_variable_get(:@conditions).each do |nested_q| 
           @post_amount_qualifier = nested_q if nested_q.is_a?(PostCartAmountQualifier)
           @qualifiers << qualifier
         end
@@ -16,7 +16,7 @@ class Campaign
       end
     end if @qualifiers.empty?
   end
-
+  
   def qualifies?(cart)
     return true if @qualifiers.empty?
     @unmodified_line_items = cart.line_items.map do |item|
@@ -25,7 +25,7 @@ class Campaign
         val = item.instance_variable_get(var)
         new_item.instance_variable_set(var, val.dup) if val.respond_to?(:dup)
       end
-      new_item
+      new_item  
     end if @post_amount_qualifier
     @qualifiers.send(@condition) do |qualifier|
       is_selector = false
@@ -48,14 +48,14 @@ end
 
 class BundleDiscount < Campaign
   def initialize(condition, customer_qualifier, cart_qualifier, discount, full_bundles_only, bundle_products)
-    super(condition, customer_qualifier, cart_qualifier, nil)
+    super(condition, customer_qualifier, cart_qualifier)
     @bundle_products = bundle_products
     @discount = discount
     @full_bundles_only = full_bundles_only
     @split_items = []
     @bundle_items = []
   end
-
+  
   def check_bundles(cart)
       bundled_items = @bundle_products.map do |bitem|
         quantity_required = bitem[:quantity].to_i
@@ -63,19 +63,17 @@ class BundleDiscount < Campaign
         type = bitem[:type].to_sym
         case type
           when :ptype
-            items = cart.line_items.select { |item| qualifiers.include?(item.variant.product.product_type) && !item.discounted? }
+            items = cart.line_items.select { |item| qualifiers.include?(item.variant.product.product_type) }
           when :ptag
-            items = cart.line_items.select { |item| (qualifiers & item.variant.product.tags).length > 0 && !item.discounted? }
+            items = cart.line_items.select { |item| (qualifiers & item.variant.product.tags).length > 0 }
           when :pid
             qualifiers.map!(&:to_i)
-            items = cart.line_items.select { |item| qualifiers.include?(item.variant.product.id) && !item.discounted? }
+            items = cart.line_items.select { |item| qualifiers.include?(item.variant.product.id) }
           when :vid
             qualifiers.map!(&:to_i)
-            items = cart.line_items.select { |item| qualifiers.include?(item.variant.id) && !item.discounted? }
-          when :vsku
-            items = cart.line_items.select { |item| (qualifiers & item.variant.skus).length > 0 && !item.discounted? }
+            items = cart.line_items.select { |item| qualifiers.include?(item.variant.id) }
         end
-
+        
         total_quantity = items.reduce(0) { |total, item| total + item.quantity }
         {
           has_all: total_quantity >= quantity_required,
@@ -85,7 +83,7 @@ class BundleDiscount < Campaign
           items: items
         }
       end
-
+      
       max_bundle_count = bundled_items.map{ |bundle| bundle[:total_possible] }.min if @full_bundles_only
       if bundled_items.all? { |item| item[:has_all] }
         if @full_bundles_only
@@ -95,8 +93,8 @@ class BundleDiscount < Campaign
           end
         else
           bundled_items.each do |bundle|
-            bundle[:items].each do |item|
-              @bundle_items << item
+            bundle[:items].each do |item| 
+              @bundle_items << item 
               cart.line_items.delete(item)
             end
           end
@@ -105,7 +103,7 @@ class BundleDiscount < Campaign
       end
       false
   end
-
+  
   def split_out_extra_quantity(cart, items, total_quantity, quantity_required)
     items_to_split = quantity_required
     items.each do |item|
@@ -124,16 +122,15 @@ class BundleDiscount < Campaign
     cart.line_items.concat(@split_items)
     @split_items.clear
   end
-
+  
   def run(cart)
     raise "Campaign requires a discount" unless @discount
     return unless qualifies?(cart)
-
+    
     if check_bundles(cart)
       @bundle_items.each { |item| @discount.apply(item) }
     end
     @bundle_items.reverse.each { |item| cart.line_items.prepend(item) }
-    revert_changes(cart) unless @post_amount_qualifier.nil? || @post_amount_qualifier.match?(cart)
   end
 end
 
@@ -155,10 +152,10 @@ CAMPAIGNS = [
     nil,
     PercentageDiscount.new(
       10,
-      ""
+      "Endo bundle redeemed, 10% saving"
     ),
     true,
-    [{:type => "pid", :qualifiers => ["1340113617012","1340112732276","1340110569588","1340114665588"], :quantity => "1"}]
+    [{:type => "vid", :qualifiers => ["12245770109044"], :quantity => "1"},	{:type => "vid", :qualifiers => ["12245773123700"], :quantity => "1"},	{:type => "vid", :qualifiers => ["12245775941748"], :quantity => "1"},	{:type => "vid", :qualifiers => ["18844374270048"], :quantity => "1"}]
   ),
 ].freeze
 
