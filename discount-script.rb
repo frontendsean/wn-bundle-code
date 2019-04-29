@@ -152,7 +152,7 @@ CAMPAIGNS = [
     nil,
     PercentageDiscount.new(
       10,
-      "Endo bundle redeemed, 10% saving"
+      "Save 10% with our Sets"
     ),
     true,
     [{:type => "vid", :qualifiers => ["12245770109044"], :quantity => "1"},	{:type => "vid", :qualifiers => ["12245773123700"], :quantity => "1"},	{:type => "vid", :qualifiers => ["12245775941748"], :quantity => "1"},	{:type => "vid", :qualifiers => ["18844374270048"], :quantity => "1"}]
